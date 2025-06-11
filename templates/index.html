@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chess Game</title>
+  <style>
+    body { font-family: Arial; text-align: center; }
+    table { border-collapse: collapse; margin: 20px auto; }
+    td {
+      width: 60px;
+      height: 60px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 36px;
+      border: 1px solid #333;
+    }
+    .white { background: #eee; }
+    .black { background: #555; color: white; }
+    #turn { font-size: 20px; margin-top: 10px; }
+    #status { font-size: 18px; color: red; margin-top: 10px; }
+    button { padding: 6px 12px; margin-top: 10px; font-size: 16px; }
+    .highlight-yellow { background: yellow !important; }
+    .highlight-purple { background: purple !important; color: white; }
+  </style>
+</head>
+<body>
+  <h1>Chess</h1>
+  <div id="turn">Turn: White</div>
+  <div id="status"></div>
+  <button onclick="restartGame()">Restart Game</button>
+  <div id="board-container"></div>
+
+  <script>
+    let selected = null;
+    let highlightMoves = [];
+
+    async function renderBoard() {
+      const res = await fetch('/board');
+      const data = await res.json();
+      const board = data.board;
+      const turn = data.turn;
+      document.getElementById('turn').innerText = `Turn: ${turn === 'w' ? 'White' : 'Black'}`;
+
+      const table = document.createElement('table');
+      board.forEach((row, r) => {
+        const tr = document.createElement('tr');
+        row.forEach((cell, c) => {
+          const td = document.createElement('td');
+          td.className = (r + c) % 2 === 0 ? 'white' : 'black';
+
+          if (highlightMoves.some(([mr, mc]) => mr === r && mc === c)) {
+            if (selected && board[selected[0]][selected[1]] &&
+                ['♔', '♚'].includes(board[selected[0]][selected[1]]) &&
+                Math.abs(c - selected[1]) === 2) {
+              td.classList.add('highlight-purple');
+            } else {
+              td.classList.add('highlight-yellow');
+            }
+          }
+
+          td.innerText = cell !== '.' ? cell : '';
+          td.onclick = () => onCellClick(r, c);
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+
+      const container = document.getElementById('board-container');
+      container.innerHTML = '';
+      container.appendChild(table);
+    }
+
+    async function onCellClick(r, c) {
+      if (highlightMoves.some(([mr, mc]) => mr === r && mc === c)) {
+        const res = await fetch('/move', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: selected, to: [r, c] })
+        });
+        const result = await res.json();
+
+        if (result.status === 'invalid') {
+          alert("Invalid move: " + result.reason);
+        } else if (result.status === 'check') {
+          document.getElementById('status').innerText = "Check!";
+        } else if (result.status === 'checkmate') {
+          alert("Checkmate! " + result.winner + " wins.");
+        } else if (result.status === 'stalemate') {
+          alert("Stalemate! It's a draw.");
+        } else {
+          document.getElementById('status').innerText = "";
+        }
+
+        selected = null;
+        highlightMoves = [];
+        renderBoard();
+      } else {
+        selected = [r, c];
+        const res = await fetch('/moves', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ position: selected })
+        });
+        const data = await res.json();
+        highlightMoves = data.moves;
+        renderBoard();
+      }
+    }
+
+    async function restartGame() {
+      const confirmReset = confirm("Are you sure you want to start a new game?");
+      if (!confirmReset) return;
+
+      await fetch('/reset', { method: 'POST' });
+      selected = null;
+      highlightMoves = [];
+      document.getElementById('status').innerText = '';
+      renderBoard();
+    }
+
+    renderBoard();
+  </script>
+</body>
+</html>
