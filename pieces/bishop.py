@@ -5,7 +5,7 @@ class Bishop:
     def symbol(self):
         return '♗' if self.color == 'w' else '♝'
 
-    def valid_moves(self, board, pos):
+    def valid_moves(self, board, pos, last_move=None, has_moved=None):
         row, col = pos
         moves = []
         for dr, dc in [(1, 1), (1, -1), (-1, 1), (-1, -1)]:

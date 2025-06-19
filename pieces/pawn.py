@@ -5,35 +5,31 @@ class Pawn:
     def symbol(self):
         return '♙' if self.color == 'w' else '♟'
 
-    def valid_moves(self, board, pos, last_move=None):
-        row, col = pos
+    def valid_moves(self, board, pos, last_move=None, has_moved=None):
+        moves = []
+        r, c = pos
         direction = 1 if self.color == 'w' else -1
         start_row = 1 if self.color == 'w' else 6
-        moves = []
+        enemy_color = 'b' if self.color == 'w' else 'w'
 
-        # Forward move
-        next_row = row + direction
-        if 0 <= next_row < 8 and board[next_row][col] is None:
-            moves.append((next_row, col))
+        # Move forward
+        if 0 <= r + direction < 8 and board[r + direction][c] is None:
+            moves.append((r + direction, c))
+            if r == start_row and board[r + 2 * direction][c] is None:
+                moves.append((r + 2 * direction, c))
 
-            # Two-step from starting row
-            if row == start_row and board[next_row + direction][col] is None:
-                moves.append((next_row + direction, col))
-
-        # Diagonal captures and en passant
+        # Captures
         for dc in [-1, 1]:
-            nr, nc = row + direction, col + dc
+            nr, nc = r + direction, c + dc
             if 0 <= nr < 8 and 0 <= nc < 8:
                 target = board[nr][nc]
-                if target and target.color != self.color:
+                if target and target.color == enemy_color:
                     moves.append((nr, nc))
 
-                # En passant
-                if last_move:
-                    (fr, fc), (tr, tc) = last_move
-                    if abs(fc - col) == 1 and fr == (6 if self.color == 'b' else 1) and tr == row and tc == col + dc:
-                        adjacent = board[row][col + dc]
-                        if adjacent and isinstance(adjacent, Pawn) and adjacent.color != self.color:
-                            moves.append((nr, nc))
+        # En passant
+        if last_move:
+            (fr, fc), (tr, tc) = last_move
+            if isinstance(board[tr][tc], Pawn) and abs(tr - fr) == 2 and tr == r and abs(tc - c) == 1:
+                moves.append((r + direction, tc))
 
         return moves

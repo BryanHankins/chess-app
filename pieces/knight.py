@@ -5,13 +5,17 @@ class Knight:
     def symbol(self):
         return '♘' if self.color == 'w' else '♞'
 
-    def valid_moves(self, board, pos):
-        row, col = pos
+    def valid_moves(self, board, pos, last_move=None, has_moved=None):
         moves = []
-        for dr, dc in [(-2, -1), (-2, 1), (-1, -2), (-1, 2),
-                       (1, -2), (1, 2), (2, -1), (2, 1)]:
-            r, c = row + dr, col + dc
-            if 0 <= r < 8 and 0 <= c < 8:
-                if board[r][c] is None or board[r][c].color != self.color:
-                    moves.append((r, c))
+        r, c = pos
+        deltas = [(-2, -1), (-2, 1), (-1, -2), (-1, 2),
+                  (1, -2), (1, 2), (2, -1), (2, 1)]
+
+        for dr, dc in deltas:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < 8 and 0 <= nc < 8:
+                target = board[nr][nc]
+                if target is None or target.color != self.color:
+                    moves.append((nr, nc))
+
         return moves

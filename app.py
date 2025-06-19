@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, jsonify, request
 from pieces.king import King
 from pieces.queen import Queen
@@ -43,14 +42,17 @@ def find_king(board, color):
 
 def is_in_check(color, board):
     king_pos = find_king(board, color)
-    if not king_pos:
-        return True
+    if king_pos is None:
+        return False
     for r in range(8):
         for c in range(8):
             piece = board[r][c]
             if piece and piece.color != color:
-                if king_pos in piece.valid_moves(board, (r, c), last_move, has_moved):
-                    return True
+                try:
+                    if king_pos in piece.valid_moves(board, (r, c), last_move, has_moved):
+                        return True
+                except Exception:
+                    continue
     return False
 
 def has_legal_moves(color, board):
