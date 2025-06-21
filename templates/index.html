@@ -50,13 +50,7 @@
           td.className = (r + c) % 2 === 0 ? 'white' : 'black';
 
           if (highlightMoves.some(([mr, mc]) => mr === r && mc === c)) {
-            if (selected && board[selected[0]][selected[1]] &&
-                ['♔', '♚'].includes(board[selected[0]][selected[1]]) &&
-                Math.abs(c - selected[1]) === 2) {
-              td.classList.add('highlight-purple');
-            } else {
-              td.classList.add('highlight-yellow');
-            }
+            td.classList.add('highlight-yellow');
           }
 
           td.innerText = cell !== '.' ? cell : '';
@@ -72,6 +66,7 @@
     }
 
     async function onCellClick(r, c) {
+      console.log("Cell clicked:", r, c);
       if (highlightMoves.some(([mr, mc]) => mr === r && mc === c)) {
         const res = await fetch('/move', {
           method: 'POST',
@@ -102,12 +97,14 @@
 
       } else {
         selected = [r, c];
+        console.log("Selected piece at:", selected);
         const res = await fetch('/moves', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ position: selected })
         });
         const data = await res.json();
+        console.log("Highlight moves:", data.moves);
         highlightMoves = data.moves;
         renderBoard();
       }
